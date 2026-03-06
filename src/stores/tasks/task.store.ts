@@ -1,13 +1,20 @@
 import { create, StateCreator } from "zustand";
 import { Task, TaskStatus } from "../../interface/task.interface";
+import { devtools } from "zustand/middleware";
 
 interface TaskState {
+  draggingTaskId?: string;
+
   tasks: Record<string, Task>;
 
   getTasksByStatus: (status: TaskStatus) => Task[];
+
+  setDraggingTaskId: (taskId: string) => void;
+  removeDraggingTaskId: () => void;
 }
 
 const storeApi: StateCreator<TaskState> = (set, get) => ({
+  draggingTaskId: undefined,
   tasks: {
     "ABC-1": {
       id: "ABC-1",
@@ -35,6 +42,14 @@ const storeApi: StateCreator<TaskState> = (set, get) => ({
     const tasks = get().tasks;
     return Object.values(tasks).filter((task) => task.status === status);
   },
+
+  setDraggingTaskId: (taskId: string) => {
+    set({ draggingTaskId: taskId });
+  },
+
+  removeDraggingTaskId: () => {
+    set({ draggingTaskId: undefined });
+  },
 });
 
-export const useTaskStore = create<TaskState>()(storeApi);
+export const useTaskStore = create<TaskState>()(devtools(storeApi));
