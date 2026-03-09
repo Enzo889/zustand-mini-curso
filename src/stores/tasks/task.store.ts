@@ -1,6 +1,7 @@
 import { create, StateCreator } from "zustand";
 import { Task, TaskStatus } from "../../interface/task.interface";
-import { devtools } from "zustand/middleware";
+import { devtools, persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 
 interface TaskState {
   draggingTaskId?: string;
@@ -9,11 +10,19 @@ interface TaskState {
 
   getTasksByStatus: (status: TaskStatus) => Task[];
 
+  addTask: (title: string, status: TaskStatus) => void;
+
   setDraggingTaskId: (taskId: string) => void;
   removeDraggingTaskId: () => void;
+
+  changeTaskStatus: (taskId: string, status: TaskStatus) => void;
+  onTaskDrop: (status: TaskStatus) => void;
 }
 
-const storeApi: StateCreator<TaskState> = (set, get) => ({
+const storeApi: StateCreator<TaskState, [["zustand/immer", never]]> = (
+  set,
+  get,
+) => ({
   draggingTaskId: undefined,
   tasks: {
     "ABC-1": {
@@ -42,6 +51,27 @@ const storeApi: StateCreator<TaskState> = (set, get) => ({
     const tasks = get().tasks;
     return Object.values(tasks).filter((task) => task.status === status);
   },
+  addTask: (title: string, status: TaskStatus) => {
+    const newTask: Task = {
+      id: window.crypto.randomUUID(),
+      title,
+      status,
+    };
+
+    // forma de zustand con immer
+
+    set((state) => {
+      state.tasks[newTask.id] = newTask;
+    });
+
+    // Forma tradicional de zustand
+    // set((state) => ({
+    //   tasks: {
+    //     ...state.tasks,
+    //     [newTask.id]: newTask,
+    //   },
+    // }));
+  },
 
   setDraggingTaskId: (taskId: string) => {
     set({ draggingTaskId: taskId });
@@ -50,6 +80,27 @@ const storeApi: StateCreator<TaskState> = (set, get) => ({
   removeDraggingTaskId: () => {
     set({ draggingTaskId: undefined });
   },
+
+  changeTaskStatus: (taskId: string, status: TaskStatus) => {
+    // using immer
+    set((state) => {
+      state.tasks[taskId] = {
+        ...state.tasks[taskId],
+        status,
+      };
+    });
+  },
+  onTaskDrop: (status: TaskStatus) => {
+    const taskId = get().draggingTaskId;
+    if (taskId) {
+      get().changeTaskStatus(taskId, status);
+      get().removeDraggingTaskId();
+    } else {
+      return;
+    }
+  },
 });
 
-export const useTaskStore = create<TaskState>()(devtools(storeApi));
+export const useTaskStore = create<TaskState>()(
+  devtools(immer(persist(storeApi, { name: "tasks-storage" }))),
+);

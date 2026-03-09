@@ -1,10 +1,7 @@
-import {
-  IoCheckmarkCircleOutline,
-  IoEllipsisHorizontalOutline,
-} from "react-icons/io5";
+import { IoAddCircleOutline, IoCheckmarkCircleOutline } from "react-icons/io5";
 import { Task, TaskStatus } from "../../interface/task.interface";
 import { SingleTask } from "./SingleTask";
-import { DragEvent } from "react";
+import { useTasks } from "../../hooks/useTasks";
 
 interface Props {
   title: string;
@@ -13,26 +10,21 @@ interface Props {
 }
 
 export const JiraTasks = ({ title, value, tasks }: Props) => {
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    console.log("ondragover");
-  };
+  const {
+    handleAddTask,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    isDragging,
+    onDragOver,
+  } = useTasks({ value });
 
-  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    console.log("ondragleave");
-  };
-
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    console.log("ondragdrop", value);
-  };
   return (
     <div
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="!text-black relative flex flex-col rounded-[20px]  bg-white bg-clip-border shadow-3xl shadow-shadow-500  w-full !p-4 3xl:p-![18px]"
+      className={`!text-black border-4  relative flex flex-col rounded-[20px]  bg-white bg-clip-border shadow-3xl shadow-shadow-500  w-full !p-4 3xl:p-![18px] ${isDragging ? "border-blue-500 border-dotted" : ""} ${onDragOver && isDragging ? "border-green-500 border-dotted" : ""} `}
     >
       {/* Task Header */}
       <div className="relative flex flex-row justify-between">
@@ -46,8 +38,8 @@ export const JiraTasks = ({ title, value, tasks }: Props) => {
           <h4 className="ml-4 text-xl font-bold text-navy-700">{title}</h4>
         </div>
 
-        <button>
-          <IoEllipsisHorizontalOutline />
+        <button onClick={() => handleAddTask()}>
+          <IoAddCircleOutline />
         </button>
       </div>
 
